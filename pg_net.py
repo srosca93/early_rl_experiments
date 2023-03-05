@@ -2,7 +2,7 @@ import numpy as np
 
 class FullyConnectedNet():
 
-    def __init__(self, layers, learning_rate = 1):
+    def __init__(self, layers, learning_rate = 1, reg=0):
         std = 0.1
         self.params = {}
         self.cache = {}
@@ -12,6 +12,7 @@ class FullyConnectedNet():
             self.params['b' + str(layer + 1)] = np.ones((1,layers[layer + 1]))*0.1
 
         self.learning_rate = learning_rate
+        self.reg = reg
 
     def affine_forward(self,x,w,b):
         N = np.matrix(x).shape[0]
@@ -40,8 +41,9 @@ class FullyConnectedNet():
         return dx
 
     def forward_pass(self, x):
+        out = x
         for layer in range(self.num_layers-1):
-            out, cache1 = self.affine_forward(x if layer == 0 else out, self.params['W' + str(layer + 1)], self.params['b' + str(layer + 1)])
+            out, cache1 = self.affine_forward(out, self.params['W' + str(layer + 1)], self.params['b' + str(layer + 1)])
             out, cache2 = self.relu_forward(out)
             self.cache[layer] = (cache1, cache2)
         out, cache1 = self.affine_forward(out, self.params['W' + str(self.num_layers)], self.params['b' + str(self.num_layers)])
@@ -50,13 +52,17 @@ class FullyConnectedNet():
 
     def backward_pass(self, dout):
         dx, dw, db = self.affine_backward(dout, self.cache[self.num_layers-1])
-        self.params['W' + str(self.num_layers)] += self.learning_rate * dw
+        print(dw)
+        print(dx)
+        lol
+        self.params['W' + str(self.num_layers)] += self.learning_rate * (dw - self.reg * self.params['W' + str(self.num_layers)])
         self.params['b' + str(self.num_layers)] += self.learning_rate * db
-        for layer in range(self.num_layers-2, 0, -1):
-            dx = self.relu_backward(dx, self.cache[layer][1])
-            dx, dw, db = self.affine_backward(dx, self.cache[layer][0])
-            self.params['W' + str(layer + 1)] += self.learning_rate * dw
-            self.params['b' + str(layer + 1)] += self.learning_rate * db
+        for layer in range(self.num_layers-1, 0, -1):
+            dx = self.relu_backward(dx, self.cache[layer-1][1])
+            dx, dw, db = self.affine_backward(dx, self.cache[layer-1][0])
+            self.params['W' + str(layer)] += self.learning_rate * (dw - self.reg * self.params['W' + str(layer)])
+            self.params['b' + str(layer)] += self.learning_rate * db
+        return dw
 
 if __name__ == "__main__":
     net = FullyConnectedNet([5, 10, 10, 2])

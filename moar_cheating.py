@@ -1,15 +1,16 @@
+
 import gym
 import numpy as np
 import matplotlib.pyplot as plt
 import copy 
 
 #Hyperparameters
-NUM_EPISODES = 5000
+NUM_EPISODES = 10000
 LEARNING_RATE = 0.000025
 GAMMA = 0.99
 
 # Create gym and seed numpy
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 nA = env.action_space.n
 np.random.seed(1)
 
@@ -27,8 +28,8 @@ def policy(state,w):
 
 # Vectorized softmax Jacobian
 def softmax_grad(softmax):
-	s = softmax.reshape(-1,1)
-	return np.diagflat(s) - np.dot(s, s.T)
+    s = softmax.reshape(-1,1)
+    return np.diagflat(s) - np.dot(s, s.T)
 
 # Main loop 
 # Make sure you update your weights AFTER each episode
@@ -54,16 +55,12 @@ for e in range(NUM_EPISODES):
 		next_state = next_state[None,:]
 
 		# Compute gradient and save with reward in memory for our weight updates
-		# dsoftmax = softmax_grad(probs)[action,:]
-		# dlog = dsoftmax / probs[0,action]
-
-		grad = np.zeros_like(probs)[0]
-		delta = np.zeros_like(probs)[0]
-		delta[action] = 1
-		dlog = delta - probs[0]
+		dsoftmax = softmax_grad(probs)[action,:]
+		dlog = dsoftmax / probs[0,action]
 		grad = state.T.dot(dlog[None,:])
+
 		grads.append(grad)
-		rewards.append(reward)
+		rewards.append(reward)		
 
 		score+=reward
 
@@ -77,7 +74,7 @@ for e in range(NUM_EPISODES):
 	for i in range(len(grads)):
 
 		# Loop through everything that happend in the episode and update towards the log policy gradient times **FUTURE** reward
-		w += LEARNING_RATE * grads[i] * sum([ r * (GAMMA ** r) for t,r in enumerate(rewards[i:])])
+		w += LEARNING_RATE * grads[i] * sum([ r * (GAMMA ** t) for t,r in enumerate(rewards[i:])])
 	
 	# Append for logging and print
 	episode_rewards.append(score) 

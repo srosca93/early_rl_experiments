@@ -7,14 +7,13 @@ class PolicyGradient():
 
     def __init__(self, env):
         self.env = gym.make(env)
-        self.env._max_episode_steps = 200
         self.num_inputs = self.env.observation_space.shape[0]
         self.num_actions = self.env.action_space.n
 
-        self.net = FullyConnectedNet([self.num_inputs, 32, self.num_actions], 0.0005)
+        self.net = FullyConnectedNet([self.num_inputs, 24, self.num_actions], 0.000025)
 
         self.num_episodes = 5000
-        self.gamma = 0.95
+        self.gamma = 0.99
 
     def __del__(self):
         self.env.close()
@@ -39,9 +38,12 @@ class PolicyGradient():
             while True:
                 observations.append(observation)
                 action, probs = self.get_action(observation)
-                # self.env.render()
+                # if ep > 9000:
+                #     self.env.render()
                 observation, reward, done, _ = self.env.step(action)
 
+                if done == True and total_reward != 499:
+                    reward = -100
                 rewards.append(reward)
                 total_reward += reward
 
@@ -60,6 +62,8 @@ class PolicyGradient():
                 grad = grads[i] * dis_reward
                 self.net.forward_pass(observations[i].reshape(-1,4))
                 self.net.backward_pass(grad.reshape(-1,2))
+
+            print("EP: " + str(ep) + " Score: " + str(total_reward) + "         ",end="\r", flush=False)
 
         plt.plot(runs)
         plt.show()
